@@ -2,10 +2,11 @@ import os
 import hashlib
 import requests
 import json
-
+import Google
 import sendemail
 import vaccine_centers
 from datetime import date
+import readsheets
 
 rows = {}
 responses = {}
@@ -24,12 +25,26 @@ def vaccine_status_pins(pins):
     return responses
 
 
-def parse_email_pins(filename):
+def parse_email_pins_file(filename):
     file = open(filename, 'r').readlines()
     for row in file:
         row = row.strip()
         email = str(row.split(';')[0])
         pins = row.split(';')[1].split(',')
+
+        if email in rows.keys():
+            currentPINs = rows[email]
+            pins.extend(currentPINs)
+        rows[email] = sorted(list(set(pins)))
+
+def parse_email_pins_google_sheets():
+    email_pins = readsheets.get_email_pins_dict()
+    for email, pins in email_pins.items():
+        email = email.strip()
+        pins_raw = pins.strip().split(';')
+        pins = [x for x in pins_raw if x]
+        if not len(pins) > 0:
+            continue
 
         if email in rows.keys():
             currentPINs = rows[email]
@@ -88,21 +103,27 @@ def generate_filtered_centers_signature(centers, pins):
     return hashlib.sha1(sig.encode("UTF-8")).hexdigest()[:5]
 
 def check_write_signature_match(email, signature):
-    sig_hash = hashlib.sha1(email.encode("UTF-8")).hexdigest()[:10] + "." + signature
+    email_sig = hashlib.sha1(email.encode("UTF-8")).hexdigest()[:10]
+    sig_hash = email_sig + "." + signature
     if not os.path.isdir("sig"):
         os.makedirs("sig")
         open(f'sig/{sig_hash}', 'a').close()
         return False
     else:
         if os.path.isfile(f'sig/{sig_hash}'):
-            return True;
+            return True
         else:
+            for file in os.listdir("sig/"):
+                if file.startswith(email_sig):
+                    print(f"Deleting existing signature for {email}")
+                    os.remove(f"sig/{file}")
             open(f'sig/{sig_hash}', 'a').close()
             return False
 
 
 if __name__ == '__main__':
-    parse_email_pins('emailandPINs')
+    #parse_email_pins('emailandPINs')
+    parse_email_pins_google_sheets()
     for email, pins in rows.items():
         r = vaccine_status_pins(pins)
         responses[(email, ','.join(pins))] = r
@@ -119,6 +140,6 @@ if __name__ == '__main__':
         if check_write_signature_match(email, signature):
             print("Signature match. Not sending email.")
         else:
+            print(f"Sending email to {email}")
             sendemail.send_gmail(filtered_responses_html[email], email, "Latest vaccine availability report")
 
-    print(filtered_responses_html)

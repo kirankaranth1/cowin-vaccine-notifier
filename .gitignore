@@ -1,5 +1,7 @@
 .idea/
 venv/
 token_gmail_v1.pickle
+token_sheets_v4.pickle
 cowinnotifier-828dd5102df9.json
 __pycache__/
+build/
