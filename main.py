@@ -1,3 +1,5 @@
+import os
+import hashlib
 import requests
 import json
 
@@ -8,6 +10,7 @@ from datetime import date
 rows = {}
 responses = {}
 filtered_responses_html = {}
+filtered_responses_signature = {}
 today = date.today().strftime("%d-%m-%Y")
 
 
@@ -20,6 +23,7 @@ def vaccine_status_pins(pins):
             responses.extend(vaccine_centers.vaccine_centers_from_dict(json.loads(resp.text)).centers)
     return responses
 
+
 def parse_email_pins(filename):
     file = open(filename, 'r').readlines()
     for row in file:
@@ -30,7 +34,8 @@ def parse_email_pins(filename):
         if email in rows.keys():
             currentPINs = rows[email]
             pins.extend(currentPINs)
-        rows[email] = list(set(pins))
+        rows[email] = sorted(list(set(pins)))
+
 
 def generate_center_html(name, pincode, total_capacity, min_age_cumulative, fee_type, vaccine):
     return f"""
@@ -43,6 +48,7 @@ def generate_center_html(name, pincode, total_capacity, min_age_cumulative, fee_
 <td style="width: 10%; height: 17px;">{vaccine}</td>
 </tr>
     """
+
 
 def generate_filtered_centers_table(centers, pins):
     header = f""" <p>Hi,</p> <p>This email contains latest availability of vaccines for your PIN codes. All data is 
@@ -72,6 +78,29 @@ def generate_filtered_centers_table(centers, pins):
     return header + table + footer
 
 
+def generate_filtered_centers_signature(centers, pins):
+    sig = ''
+    centers.sort(key= lambda x: x.center_id)
+    for c in centers:
+        sig += str(c.center_id)
+    sig += pins
+    print(f"Signature: {sig}")
+    return hashlib.sha1(sig.encode("UTF-8")).hexdigest()[:5]
+
+def check_write_signature_match(email, signature):
+    sig_hash = hashlib.sha1(email.encode("UTF-8")).hexdigest()[:10] + "." + signature
+    if not os.path.isdir("sig"):
+        os.makedirs("sig")
+        open(f'sig/{sig_hash}', 'a').close()
+        return False
+    else:
+        if os.path.isfile(f'sig/{sig_hash}'):
+            return True;
+        else:
+            open(f'sig/{sig_hash}', 'a').close()
+            return False
+
+
 if __name__ == '__main__':
     parse_email_pins('emailandPINs')
     for email, pins in rows.items():
@@ -84,6 +113,12 @@ if __name__ == '__main__':
                 filtered_centers.append(center)
         filtered_centers.sort(key=lambda x: x.total_capacity, reverse=True)
         filtered_responses_html[email] = generate_filtered_centers_table(filtered_centers, pins)
-        sendemail.send_gmail(filtered_responses_html[email], email, "Latest vaccine availability report")
+        filtered_responses_signature[email] = generate_filtered_centers_signature(filtered_centers, pins)
+
+    for email, signature in filtered_responses_signature.items():
+        if check_write_signature_match(email, signature):
+            print("Signature match. Not sending email.")
+        else:
+            sendemail.send_gmail(filtered_responses_html[email], email, "Latest vaccine availability report")
 
     print(filtered_responses_html)
