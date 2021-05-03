@@ -100,6 +100,8 @@ class Center:
     fee_type: str
     sessions: List[Session]
     total_capacity: int
+    min_age_cumulative: int
+    vaccine: str
 
     def __init__(self, center_id: int, name: str, state_name: str, district_name: str, block_name: str, pincode: int, lat: int, long: int, center_from: datetime, to: datetime, fee_type: str, sessions: List[Session]) -> None:
         self.center_id = center_id
@@ -115,6 +117,16 @@ class Center:
         self.fee_type = fee_type
         self.sessions = sessions
         self.total_capacity = sum(x.available_capacity for x in sessions)
+        self.min_age_cumulative = min(x.min_age_limit for x in sessions)
+        vaccines = set()
+        for s in sessions:
+            if not s.vaccine and s.vaccine != '':
+                vaccines.add(s.vaccine)
+        if len(vaccines) > 0:
+            self.vaccine = ','.join(list(vaccines))
+        else:
+            self.vaccine = 'No data'
+
 
     @staticmethod
     def from_dict(obj: Any) -> 'Center':
