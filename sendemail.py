@@ -3,7 +3,7 @@ import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-CLIENT_SECRET_FILE = 'cowinnotifier-828dd5102df9.json'
+CLIENT_SECRET_FILE = 'client_secret_new.json'
 API_NAME = 'gmail'
 API_VERSION = 'v1'
 SCOPES = ['https://mail.google.com/']

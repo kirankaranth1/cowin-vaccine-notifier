@@ -11,6 +11,7 @@ from uuid import UUID
 from typing import List, Any, TypeVar, Callable, Type, cast
 from datetime import datetime
 import dateutil.parser
+import math
 
 
 T = TypeVar("T")
@@ -23,7 +24,11 @@ def from_str(x: Any) -> str:
 
 
 def from_int(x: Any) -> int:
-    if  x < 1:
+    try:
+        x = math.floor(x)
+    except:
+        print("floor failed")
+    if x < 1:
         x = 0
     assert isinstance(x, int) and not isinstance(x, bool)
     return x

@@ -75,7 +75,9 @@ def generate_center_html(name, pincode, total_capacity, min_age_cumulative, fee_
 
 
 def generate_filtered_centers_table(centers, pins):
-    header = f""" <p>Hi,</p> <p>This email contains latest availability of vaccines for your PIN codes. All data is 
+    header = f""" <p>To unsubscribe from these emails please visit: 
+    <a href="https://forms.gle/oY6x4MNryibaPn6y8">https://forms.gle/oY6x4MNryibaPn6y8</a></p>
+    <p>Hi,</p> <p>This email contains latest availability of vaccines for your PIN codes. All data is 
     retrieved from Cowin. Additional notifications will be sent if there are changes to the current status below.</p> 
     <p>The following PIN codes were checked: {pins}</p> 
     <table style="border-collapse: collapse; width: 100%; height: 69px;" border="1">
@@ -150,10 +152,15 @@ if __name__ == '__main__':
         filtered_responses_html[email] = generate_filtered_centers_table(filtered_centers, pins)
         filtered_responses_signature[email] = generate_filtered_centers_signature(filtered_centers, pins)
 
+    unsub_set = readsheets.get_unsub_list_set()
+
     for email, signature in filtered_responses_signature.items():
         if check_write_signature_match(email, signature):
             print(f"Signature match. Not sending email to {email}.")
         else:
-            print(f"Sending email to {email}")
-            sendemail.send_gmail(filtered_responses_html[email], email, "Latest vaccine availability report")
+            if email in unsub_set:
+                print(f"Not sending email to unsub {email}")
+            else:
+                print(f"Sending email to {email}")
+                sendemail.send_gmail(filtered_responses_html[email], email, "Latest vaccine availability report")
 
