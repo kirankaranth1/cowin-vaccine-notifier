@@ -19,9 +19,18 @@ def vaccine_status_pins(pins):
     responses = []
     with requests.session() as session:
         for pin in pins:
-            resp = session.get(
-                f"https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode={pin}&date={today}")
-            responses.extend(vaccine_centers.vaccine_centers_from_dict(json.loads(resp.text)).centers)
+            try:
+                resp = session.get(
+                    f"https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode={pin}&date={today}")
+                responses.extend(vaccine_centers.vaccine_centers_from_dict(json.loads(resp.text)).centers)
+            except Exception as e:
+                ex = open('exceptions.txt', 'a')
+                print(e)
+                print(pins)
+                print(pin)
+                print(str(e) + '\n' + str(pin) + str(','.join(pins)), file = ex)
+                ex.close()
+                continue
     return responses
 
 
@@ -86,9 +95,14 @@ def generate_filtered_centers_table(centers, pins):
 
     table = ""
 
-    for center in centers:
-        table += generate_center_html(center.name, center.pincode, center.total_capacity, center.min_age_cumulative,
-                                      center.fee_type, center.vaccine)
+    if len(centers) > 0:
+        for center in centers:
+            table += generate_center_html(center.name, center.pincode, center.total_capacity, center.min_age_cumulative,
+                                          center.fee_type, center.vaccine)
+    else:
+        table+="""
+          <p><strong>No centers with free slots available for next 7 days</strong></p>
+        """
 
     return header + table + footer
 
@@ -122,7 +136,7 @@ def check_write_signature_match(email, signature):
 
 
 if __name__ == '__main__':
-    #parse_email_pins('emailandPINs')
+    #parse_email_pins_file('emailandPINs')
     parse_email_pins_google_sheets()
     for email, pins in rows.items():
         r = vaccine_status_pins(pins)
@@ -138,7 +152,7 @@ if __name__ == '__main__':
 
     for email, signature in filtered_responses_signature.items():
         if check_write_signature_match(email, signature):
-            print("Signature match. Not sending email.")
+            print(f"Signature match. Not sending email to {email}.")
         else:
             print(f"Sending email to {email}")
             sendemail.send_gmail(filtered_responses_html[email], email, "Latest vaccine availability report")
