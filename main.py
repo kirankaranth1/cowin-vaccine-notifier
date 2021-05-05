@@ -1,5 +1,7 @@
 import os
 import hashlib
+import time
+
 import requests
 import json
 import Google
@@ -7,9 +9,11 @@ import sendemail
 import vaccine_centers
 from datetime import date
 import readsheets
+import uuid
 
 rows = {}
 responses = {}
+response_pin = {}
 filtered_responses_html = {}
 filtered_responses_signature = {}
 today = date.today().strftime("%d-%m-%Y")
@@ -18,19 +22,29 @@ today = date.today().strftime("%d-%m-%Y")
 def vaccine_status_pins(pins):
     responses = []
     with requests.session() as session:
+        session.headers.update({'User-Agent': f'{str(uuid.uuid4())}'})
         for pin in pins:
-            try:
-                resp = session.get(
-                    f"https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode={pin}&date={today}")
-                responses.extend(vaccine_centers.vaccine_centers_from_dict(json.loads(resp.text)).centers)
-            except Exception as e:
-                ex = open('exceptions.txt', 'a')
-                print(e)
-                print(pins)
-                print(pin)
-                print(str(e) + '\n' + str(pin) + str(','.join(pins)), file = ex)
-                ex.close()
-                continue
+            if pin in response_pin.keys():
+                responses.extend(response_pin[pin])
+            else:
+                try:
+                    resp = session.get(
+                        f"https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode={pin}&date={today}")
+                    if resp.status_code == requests.codes.ok:
+                        response_centers = vaccine_centers.vaccine_centers_from_dict(json.loads(resp.text)).centers
+                        responses.extend(response_centers)
+                        response_pin[pin] = response_centers
+                    elif resp.status_code == 403:
+                        time.sleep(180)
+                        continue
+                except Exception as e:
+                    ex = open('exceptions.txt', 'a')
+                    print(e)
+                    print(pins)
+                    print(pin)
+                    print(str(e) + '\n' + str(pin) + str(','.join(pins)), file = ex)
+                    ex.close()
+                    continue
     return responses
 
 
@@ -140,9 +154,12 @@ def check_write_signature_match(email, signature):
 if __name__ == '__main__':
     #parse_email_pins_file('emailandPINs')
     parse_email_pins_google_sheets()
+    unsub_set = readsheets.get_unsub_list_set()
     for email, pins in rows.items():
-        r = vaccine_status_pins(pins)
-        responses[(email, ','.join(pins))] = r
+        if email not in unsub_set:
+            r = vaccine_status_pins(pins)
+            if len(r) > 0:
+                responses[(email, ','.join(pins))] = r
     for (email, pins), centers in responses.items():
         filtered_centers = []
         for center in centers:
@@ -152,7 +169,6 @@ if __name__ == '__main__':
         filtered_responses_html[email] = generate_filtered_centers_table(filtered_centers, pins)
         filtered_responses_signature[email] = generate_filtered_centers_signature(filtered_centers, pins)
 
-    unsub_set = readsheets.get_unsub_list_set()
 
     for email, signature in filtered_responses_signature.items():
         if check_write_signature_match(email, signature):

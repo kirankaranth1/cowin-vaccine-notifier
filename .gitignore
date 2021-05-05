@@ -7,3 +7,4 @@ __pycache__/
 build/
 client_secret_new.json
 log.txt
+sig/
