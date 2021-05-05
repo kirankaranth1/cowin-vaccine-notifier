@@ -125,7 +125,7 @@ class Center:
         self.min_age_cumulative = min(x.min_age_limit for x in sessions)
         vaccines = set()
         for s in sessions:
-            if not s.vaccine and s.vaccine != '':
+            if s.vaccine and s.vaccine != '':
                 vaccines.add(s.vaccine)
         if len(vaccines) > 0:
             self.vaccine = ','.join(list(vaccines))
