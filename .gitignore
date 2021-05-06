@@ -8,3 +8,5 @@ build/
 client_secret_new.json
 log.txt
 sig/
+emailcreds/
+*.pickle

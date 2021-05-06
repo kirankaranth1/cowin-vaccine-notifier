@@ -22,7 +22,7 @@ today = date.today().strftime("%d-%m-%Y")
 def vaccine_status_pins(pins):
     responses = []
     with requests.session() as session:
-        session.headers.update({'User-Agent': f'{str(uuid.uuid4())}'})
+        session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36 Edg/90.0.818.51'})
         for pin in pins:
             if pin in response_pin.keys():
                 responses.extend(response_pin[pin])
@@ -35,7 +35,8 @@ def vaccine_status_pins(pins):
                         responses.extend(response_centers)
                         response_pin[pin] = response_centers
                     elif resp.status_code == 403:
-                        time.sleep(180)
+                        print("Waiting for 5 minutes")
+                        time.sleep(300)
                         continue
                 except Exception as e:
                     ex = open('exceptions.txt', 'a')
