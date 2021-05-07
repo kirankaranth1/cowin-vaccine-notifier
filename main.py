@@ -1,7 +1,6 @@
 import os
 import hashlib
 import time
-
 import requests
 import json
 import Google
@@ -92,11 +91,8 @@ def generate_center_html(name, pincode, total_capacity, min_age_cumulative, fee_
 
 
 def generate_filtered_centers_table(centers, pins):
-    header = f""" <p>To unsubscribe from these emails please visit: 
-    <a href="https://forms.gle/oY6x4MNryibaPn6y8">https://forms.gle/oY6x4MNryibaPn6y8</a></p>
-    <p>Hi,</p> <p>This email contains latest availability of vaccines for your PIN codes. All data is 
-    retrieved from Cowin. Additional notifications will be sent if there are changes to the current status below.</p> 
-    <p>The following PIN codes were checked: {pins}</p> 
+    header = f""" 
+    <p>The following PIN codes were checked for vaccine availability: {pins}</p> 
     <table style="border-collapse: collapse; width: 100%; height: 69px;" border="1">
 <tbody>
 <tr style="height: 52px;">
@@ -108,9 +104,12 @@ def generate_filtered_centers_table(centers, pins):
 <td style="width: 10%; height: 52px;"><strong>Vaccine name</strong></td>
 </tr>"""
 
-    footer = """
+    footer = f"""
     </tbody>
-</table>"""
+</table>
+<p>Unique notification ID: {str(uuid.uuid4())}</p>
+<p>To unsubscribe from these emails go to the below link (Remove spaces)</p>
+forms . gle / oY6x4MNryibaPn6y8"""
 
     table = ""
 
@@ -155,8 +154,8 @@ def check_write_signature_match(email, signature):
 
 
 if __name__ == '__main__':
-    #parse_email_pins_file('emailandPINs')
-    parse_email_pins_google_sheets()
+    parse_email_pins_file('emailandPINs')
+    #parse_email_pins_google_sheets()
     unsub_set = readsheets.get_unsub_list_set()
     for email, pins in rows.items():
         if email not in unsub_set:
@@ -183,4 +182,5 @@ if __name__ == '__main__':
                 print(f"Sending email to {email}")
                 now = datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%d-%m-%Y %H:%M:%S")
                 sendemail.send_gmail(filtered_responses_html[email], email, f"Vaccine availability report as of {now}")
+                #sendemail.send_gmail("Test email", email, f"Vaccine availability report as of {now}")
 
