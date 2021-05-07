@@ -153,8 +153,8 @@ def check_write_signature_match(email, signature):
 
 
 if __name__ == '__main__':
-    parse_email_pins_file('emailandPINs')
-    #parse_email_pins_google_sheets()
+    #parse_email_pins_file('emailandPINs')
+    parse_email_pins_google_sheets()
     unsub_set = readsheets.get_unsub_list_set()
     for email, pins in rows.items():
         if email not in unsub_set:
