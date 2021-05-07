@@ -107,7 +107,6 @@ def generate_filtered_centers_table(centers, pins):
     footer = f"""
     </tbody>
 </table>
-<p>Unique notification ID: {str(uuid.uuid4())}</p>
 <p>To unsubscribe from these emails go to the below link (Remove spaces)</p>
 forms . gle / oY6x4MNryibaPn6y8"""
 
@@ -182,5 +181,4 @@ if __name__ == '__main__':
                 print(f"Sending email to {email}")
                 now = datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%d-%m-%Y %H:%M:%S")
                 sendemail.send_gmail(filtered_responses_html[email], email, f"Vaccine availability report as of {now}")
-                #sendemail.send_gmail("Test email", email, f"Vaccine availability report as of {now}")
 
