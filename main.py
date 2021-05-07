@@ -10,6 +10,8 @@ import vaccine_centers
 from datetime import date
 import readsheets
 import uuid
+from datetime import datetime
+import pytz
 
 rows = {}
 responses = {}
@@ -179,5 +181,6 @@ if __name__ == '__main__':
                 print(f"Not sending email to unsub {email}")
             else:
                 print(f"Sending email to {email}")
-                sendemail.send_gmail(filtered_responses_html[email], email, "Latest vaccine availability report")
+                now = datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%d-%m-%Y %H:%M:%S")
+                sendemail.send_gmail(filtered_responses_html[email], email, f"Vaccine availability report as of {now}")
 
