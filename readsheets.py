@@ -20,8 +20,15 @@ unsub_list_rows = unsub_list.get('values', [])
 
 def get_email_pins_dict():
     dict = {}
+
     for row in rows:
-        dict[row[0]] = row[1]
+        email = row[0].strip()
+        pins = row[1].split(';')
+
+        if email in dict.keys():
+            currentPINs = dict[email]
+            pins.extend(currentPINs)
+        dict[email] = sorted(list(set(pins)))
     return dict
 
 def get_unsub_list_set():

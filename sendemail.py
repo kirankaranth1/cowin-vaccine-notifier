@@ -3,7 +3,7 @@ import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-accounts = ['vaccinenotificationcowin2', 'vaccinenotifier1']
+accounts = ['vaccinenotificationcowin2', 'vaccinenotifier1', 'vaccinenotificationcowin3', 'vaccinenotificationcowin4']
 
 lastused_file = 'lastusedemail.txt'
 file = open(lastused_file, 'r')
